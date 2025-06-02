@@ -1,4 +1,7 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Acorn.Trail.GFX;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -6,12 +9,28 @@ namespace Acorn.Trail;
 
 public class MapComponent : Game
 {
-    private GraphicsDeviceManager _graphics;
+    private GraphicsDeviceManager _graphicsDeviceManager;
     private SpriteBatch _spriteBatch;
+    private readonly IGraphicsManager _graphicsManger;
 
-    public MapComponent()
+    private Texture2D? _ui = null;
+    private readonly IGraphicsDeviceManagerProvider _graphicsDeviceManagerProvider;
+
+    public MapComponent(IGraphicsDeviceManagerProvider graphicsDeviceManagerProvider, IGraphicsManager graphicsManager)
     {
-        _graphics = new GraphicsDeviceManager(this);
+        _graphicsManger = graphicsManager;
+        _graphicsDeviceManager = new GraphicsDeviceManager(this);
+        _graphicsDeviceManager.PreparingDeviceSettings += (sender, e) =>
+        {
+            e.GraphicsDeviceInformation.PresentationParameters.BackBufferWidth = 800;
+            e.GraphicsDeviceInformation.PresentationParameters.BackBufferHeight = 600;
+            e.GraphicsDeviceInformation.PresentationParameters.BackBufferFormat = SurfaceFormat.Color;
+            e.GraphicsDeviceInformation.PresentationParameters.PresentationInterval = PresentInterval.Two;
+        };
+        graphicsDeviceManagerProvider.GraphicsDeviceManager = _graphicsDeviceManager;
+
+        _graphicsDeviceManagerProvider = graphicsDeviceManagerProvider;
+        
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
     }
@@ -26,8 +45,6 @@ public class MapComponent : Game
     protected override void LoadContent()
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
-
-        // TODO: use this.Content to load your game content here
     }
 
     protected override void Update(GameTime gameTime)
@@ -36,7 +53,10 @@ public class MapComponent : Game
             Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
 
-        // TODO: Add your update logic here
+        if (_graphicsDeviceManagerProvider.GraphicsDeviceManager?.GraphicsDevice is not null && _ui is null)
+        {
+            _ui = _graphicsManger.TextureFromResource(GFXTypes.PreLoginUI, 1);
+        }
 
         base.Update(gameTime);
     }
@@ -44,8 +64,14 @@ public class MapComponent : Game
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
+        _spriteBatch.Begin();
 
-        // TODO: Add your drawing code here
+        if (_ui is not null)
+        {
+            _spriteBatch.Draw(_ui, new Rectangle(0, 0, _ui.Width, _ui.Height), Color.White);
+        }
+
+        _spriteBatch.End();
 
         base.Draw(gameTime);
     }

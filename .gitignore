@@ -3,6 +3,8 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+Acorn.Trail/egf/*.egf
+
 # dotenv files
 .env
 
